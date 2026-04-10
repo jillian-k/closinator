@@ -115,3 +115,100 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 | util_closer_RuleEngine | 83% |
 
 The two classes below 90% have pre-existing uncovered lines unrelated to this changeset. `util_closer_RuleEngine` at 83% is primarily due to the `LastActivityDate` code paths (lines 292+) which cannot execute because the field doesn't exist on Case in this org.
+
+---
+
+## Why These Issues Weren't Caught Earlier
+
+The test suite has strong coverage of the rule engine logic but a structural blind spot: **no test verifies that the batch query includes the fields the engine needs**. The tests fall into two categories that both pass while the feature is broken:
+
+1. **Engine logic tests** — these hand-build Cases with all the right fields in the SELECT (e.g., `SELECT Id, Status, RecordType.DeveloperName FROM Case`). They prove the filtering logic is correct when given proper data. But this is not the data shape the batch provides.
+
+2. **"Graceful failure" tests** — these intentionally recreate the missing-field scenario and assert the engine doesn't crash. For example:
+
+   - `testEvaluateCases_RecordType_NotQueried` (line 709 of `util_closer_RuleEngine_Test.cls`) loads a Case WITHOUT `RecordType.DeveloperName`, runs the engine, and asserts `changes != null`. It treats "silently skip the record type check" as correct behavior.
+   - `testEvaluateCases_LastActivityDate_FieldNotQueried` (line 584) does the same for `LastActivityDate`.
+
+   These tests **document the bug as intended behavior**. The assertion is that the code doesn't crash — not that the feature works.
+
+The gap is a missing **integration test** that connects the batch query to the engine: "given the exact field set from `queryCasesByStatus`, does record type filtering actually work?" That test never existed.
+
+---
+
+## Production Verification and Deployment Guide
+
+These changes were validated and deployed to dcca-devcc (sandbox). The following guidance is for the developer deploying to production.
+
+### Step 1: Verify production org configuration
+
+Run these queries against the production org to understand the current state:
+
+**Check if `LastActivityDate` exists on Case:**
+```bash
+sf data query \
+  --query "SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = 'Case' AND QualifiedApiName = 'LastActivityDate'" \
+  --target-org <prod-alias>
+```
+
+- If it returns 1 result: Activities tracking is enabled. Add `LastActivityDate` to the batch query SELECT in `util_closer_CaseDataAccess.cls` alongside `RecordType.DeveloperName` before deploying.
+- If it returns 0 results: Activities tracking is not enabled. Deploy as-is. The `Days_Since_Last_Activity__c` feature will remain non-functional until Activities are enabled.
+
+**Check current rule configuration:**
+```bash
+sf data query \
+  --query "SELECT DeveloperName, Is_Active__c, Record_Type_Developer_Names__c, Exclude_Record_Type_Developer_Names__c, Days_Since_Last_Activity__c, Additional_Filter_Logic__c, Stop_Processing__c FROM util_closer_Case_Status_Rule__mdt ORDER BY Execution_Order__c" \
+  --target-org <prod-alias>
+```
+
+Review which rules are using record type filters, activity checks, or additional filter logic. Any rule with `Record_Type_Developer_Names__c` populated has been silently ignoring that filter until this fix is deployed.
+
+### Step 2: Deploy
+
+The following changes are safe to deploy to any org regardless of configuration:
+
+- `util_closer_CaseDataAccess.cls` — batch query with `RecordType.DeveloperName`
+- `util_closer_RuleViewerController.cls` — `stopProcessing` removed from API response
+- `util_closer_RuleViewerController_Test.cls` — updated assertion
+- `util_closer_RuleViewer` LWC — `stopProcessing` block removed from HTML
+- All CMDT field metadata (help text and descriptions)
+- Page layout and list view changes
+- `util_closer_CaseDataAccess.cls` overload alignment
+
+If `LastActivityDate` exists in production, also update line 27 of `util_closer_CaseDataAccess.cls` to add `LastActivityDate` to the static SOQL SELECT.
+
+### Step 3: Validate after deployment
+
+Run all Closinator tests in production:
+```bash
+sf apex run test \
+  --class-names util_closer_CaseDataAccess_Test \
+  --class-names util_closer_RuleEngine_Test \
+  --class-names util_closer_CaseStatusBatch_Test \
+  --class-names util_closer_RuleViewerController_Test \
+  --class-names util_closer_ChildRecordService_Test \
+  --class-names util_closer_Logger_Test \
+  --class-names util_closer_SettingsService_Test \
+  --class-names util_closer_CaseStatusScheduler_Test \
+  --class-names util_closer_SchedulerController_Test \
+  --class-names util_closer_NotificationService_Test \
+  --class-names util_closer_LogDataAccess_Test \
+  --class-names util_closer_BatchLogService_Test \
+  --class-names util_closer_CaseLogService_Test \
+  --class-names util_closer_LogCleanupBatch_Test \
+  --class-names util_closer_LogViewerController_Test \
+  --class-names util_closer_PermissionSet_Test \
+  --code-coverage \
+  --result-format human \
+  --target-org <prod-alias> \
+  --wait 10
+```
+
+Verify 100% pass rate and review coverage.
+
+### Step 4: Run simulation
+
+Run the Closinator in simulation mode after deployment to confirm record type filters are now working. Review `util_closer_Case_Log__c` records to verify that cases are being correctly included/excluded by record type.
+
+### Recommendation: Enable Activities on Case
+
+If the client wants `Days_Since_Last_Activity__c` to function, Activities tracking must be enabled on the Case object in the org. This is a Salesforce configuration change (Setup > Activity Settings), not a code change. Once enabled, `LastActivityDate` becomes available on Case and should be added to the batch query.
