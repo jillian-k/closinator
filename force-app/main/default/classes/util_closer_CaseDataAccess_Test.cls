@@ -441,4 +441,3 @@ private class util_closer_CaseDataAccess_Test {
         System.assertEquals(0, results.size(), 'Should return empty list for invalid lookup field');
     }
 }
-

@@ -57,4 +57,3 @@ public with sharing class util_closer_Logger {
         return LOG_PREFIX + Datetime.now().format('yyyy-MM-dd HH:mm:ss.SSS') + ' - ' + message;
     }
 }
-

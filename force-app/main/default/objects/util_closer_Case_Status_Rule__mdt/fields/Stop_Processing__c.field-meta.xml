@@ -2,11 +2,9 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Stop_Processing__c</fullName>
     <defaultValue>false</defaultValue>
-    <description>If true and this rule matches, do not evaluate subsequent rules for this Case.</description>
-    <externalId>false</externalId>
+    <description>Non-functional. The engine always uses first-match-wins regardless of this value. Retained on the object for backward compatibility but removed from UI surfaces.</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>When checked, no further rules will be evaluated for a Case after this rule matches.</inlineHelpText>
+    <inlineHelpText>This field has no effect. The engine always stops at the first matching rule (first-match-wins).</inlineHelpText>
     <label>Stop Processing</label>
     <type>Checkbox</type>
 </CustomField>
-

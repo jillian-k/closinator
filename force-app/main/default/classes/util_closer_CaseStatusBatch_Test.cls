@@ -1844,4 +1844,3 @@ private class util_closer_CaseStatusBatch_Test {
         resetMockRules();
     }
 }
-

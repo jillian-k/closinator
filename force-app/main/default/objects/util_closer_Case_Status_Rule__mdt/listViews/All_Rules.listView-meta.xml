@@ -9,7 +9,6 @@
     <columns>Days_Since_Last_Modified__c</columns>
     <columns>Days_Since_Created__c</columns>
     <columns>Days_Since_Last_Activity__c</columns>
-    <columns>Stop_Processing__c</columns>
     <columns>Description__c</columns>
     <columns>DeveloperName</columns>
     <filterScope>Everything</filterScope>

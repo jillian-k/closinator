@@ -3,10 +3,8 @@
     <fullName>Is_Active__c</fullName>
     <defaultValue>true</defaultValue>
     <description>Rule is active and should be evaluated.</description>
-    <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
     <inlineHelpText>When checked, this rule will be evaluated during batch processing.</inlineHelpText>
     <label>Is Active</label>
     <type>Checkbox</type>
 </CustomField>
-

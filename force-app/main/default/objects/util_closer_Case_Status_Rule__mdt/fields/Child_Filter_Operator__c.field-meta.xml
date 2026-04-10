@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Child_Filter_Operator__c</fullName>
-    <description>Operator to use when comparing child filter field to value.</description>
-    <externalId>false</externalId>
+    <description>Operator used when comparing the child record field value to the Child Filter Value. Equals is case-sensitive. Contains is case-insensitive.</description>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>Select how to compare the child field value.</inlineHelpText>
+    <inlineHelpText>Equals: exact match (case-sensitive). Not Equals: does not match exactly. Contains: partial text match (case-insensitive). Is Null: field has no value. Is Not Null: field has any value. Important: Equals is case-sensitive — &apos;closed&apos; will NOT match &apos;Closed&apos;. Use Contains for case-insensitive matching.</inlineHelpText>
     <label>Child Filter Operator</label>
     <required>false</required>
     <type>Picklist</type>

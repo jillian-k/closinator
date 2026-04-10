@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Days_Since_Last_Activity__c</fullName>
-    <description>Minimum days since last activity on the Case. Leave blank to ignore.</description>
+    <description>Minimum number of days since the last logged Task or Event on the Case (based on LastActivityDate). Requires Activities tracking to be enabled on the Case object. If LastActivityDate is not available or has no value, this check is skipped and the rule can still match. Leave blank to ignore.</description>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>Cases must not have had any activity for at least this many days.</inlineHelpText>
+    <inlineHelpText>Enter a whole number. The Case must have had no Tasks or Events logged for at least this many days (uses LastActivityDate, not LastModifiedDate). Requires Activities to be enabled on Case. Example: 30 matches cases with no activity in the last 30 days. Leave blank to skip this check.</inlineHelpText>
     <label>Days Since Last Activity</label>
     <precision>5</precision>
     <required>false</required>
@@ -12,4 +12,3 @@
     <type>Number</type>
     <unique>false</unique>
 </CustomField>
-

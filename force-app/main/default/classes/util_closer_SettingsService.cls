@@ -185,4 +185,3 @@ public with sharing class util_closer_SettingsService {
         return emails;
     }
 }
-

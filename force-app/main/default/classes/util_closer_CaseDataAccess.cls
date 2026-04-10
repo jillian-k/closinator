@@ -25,7 +25,7 @@ public without sharing class util_closer_CaseDataAccess {
         // Include Origin, Owner.Name, and LastModifiedBy.Name for rule filtering
         return Database.getQueryLocator([
             SELECT Id, CaseNumber, Status, LastModifiedDate, CreatedDate, Origin,
-                   Owner.Name, LastModifiedBy.Name
+                   Owner.Name, LastModifiedBy.Name, RecordType.DeveloperName
             FROM Case
             WHERE IsClosed = false
             AND Status IN :sourceStatuses
@@ -47,7 +47,9 @@ public without sharing class util_closer_CaseDataAccess {
         }
         
         Set<String> fields = new Set<String>{
-            'Id', 'Status', 'LastModifiedDate', 'CreatedDate'
+            'Id', 'CaseNumber', 'Status', 'LastModifiedDate', 'CreatedDate',
+            'Origin', 'Owner.Name', 'LastModifiedBy.Name',
+            'RecordType.DeveloperName'
         };
         
         if (additionalFields != null && !additionalFields.isEmpty()) {
@@ -80,7 +82,9 @@ public without sharing class util_closer_CaseDataAccess {
         }
         
         Set<String> fields = new Set<String>{
-            'Id', 'Status', 'LastModifiedDate', 'CreatedDate'
+            'Id', 'CaseNumber', 'Status', 'LastModifiedDate', 'CreatedDate',
+            'Origin', 'Owner.Name', 'LastModifiedBy.Name',
+            'RecordType.DeveloperName'
         };
         
         if (additionalFields != null && !additionalFields.isEmpty()) {
@@ -167,4 +171,3 @@ public without sharing class util_closer_CaseDataAccess {
         }
     }
 }
-
