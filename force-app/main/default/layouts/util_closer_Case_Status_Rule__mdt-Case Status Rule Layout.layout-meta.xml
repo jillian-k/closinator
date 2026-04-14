@@ -177,7 +177,7 @@
         <customLabel>true</customLabel>
         <detailHeading>true</detailHeading>
         <editHeading>true</editHeading>
-        <label>Advanced Filtering</label>
+        <label>Additional Case Filters</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Edit</behavior>
