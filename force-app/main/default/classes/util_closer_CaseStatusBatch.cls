@@ -81,10 +81,16 @@ public with sharing class util_closer_CaseStatusBatch implements Database.Batcha
             validateAutoCloseReasonField();
         }
 
-        // Use CaseDataAccess to query without sharing restrictions
-        // This allows the batch to process all Cases matching criteria,
-        // regardless of the running user's sharing access
+        // Extract additional fields from Additional_Filter_Logic__c so the batch query
+        // includes every field the rule engine needs to evaluate filters
+        Set<String> additionalFields = util_closer_RuleEngine.extractFilterFields(this.rules);
+
         util_closer_Logger.debug('CaseStatusBatch', 'Querying Cases without sharing restrictions for statuses: ' + this.sourceStatuses);
+        if (!additionalFields.isEmpty()) {
+            util_closer_Logger.debug('CaseStatusBatch', 'Including ' + additionalFields.size() +
+                ' additional fields from filter logic: ' + additionalFields);
+            return util_closer_CaseDataAccess.queryCasesByStatus(this.sourceStatuses, additionalFields);
+        }
         return util_closer_CaseDataAccess.queryCasesByStatus(this.sourceStatuses);
     }
 

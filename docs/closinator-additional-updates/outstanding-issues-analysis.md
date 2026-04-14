@@ -1,9 +1,9 @@
 # Closinator — Outstanding Issues Analysis
 
 **Original Date:** March 23, 2026
-**Updated:** April 9, 2026
+**Updated:** April 13, 2026
 **Org:** dcca-devcc (Sandbox)
-**Source of Truth:** Code retrieved directly from dcca-devcc org on April 9, 2026
+**Source of Truth:** Code retrieved directly from dcca-devcc org on April 9, 2026; Issue 1 fix applied April 13, 2026
 
 ---
 
@@ -11,20 +11,20 @@
 
 This analysis identifies rule configuration fields that are presented to the admin in the Custom Metadata Type UI and appear to have functionality, but do not work as expected due to gaps in the underlying Apex implementation.
 
-All five rules in the org use `Record_Type_Developer_Names__c = PVL`, meaning every rule intends to be scoped to PVL cases only. None of them actually are. One rule uses `Additional_Filter_Logic__c` with a field not in the batch query, which also silently fails.
+All five rules in the org use `Record_Type_Developer_Names__c = PVL`, meaning every rule intends to be scoped to PVL cases only. Rules also use `Additional_Filter_Logic__c` to filter on custom Case fields.
 
 ---
 
-## Issue 1: Additional Filter Logic — Implemented but Limited by Batch Query
+## Issue 1: Additional Filter Logic — FIXED
 
-**Status:** Open — documented in help text; dynamic field extraction deferred
+**Status:** Fixed
 **Field:** `Additional_Filter_Logic__c`
 **UI Location:** Advanced Filtering section
 **Appears to do:** Allow admins to enter custom filter conditions that restrict which cases a rule applies to
 
-**What actually happens:** The evaluation code works correctly — but only for fields already included in the batch query SELECT. The batch query selects: `Id`, `CaseNumber`, `Status`, `LastModifiedDate`, `CreatedDate`, `Origin`, `Owner.Name`, `LastModifiedBy.Name`. If a filter references any other field, `getFieldValue` at line 906 of `util_closer_RuleEngine.cls` catches the resulting exception and returns null. Depending on the operator, this causes the condition to either silently fail (excluding cases that should match) or silently pass (including cases that should be excluded).
+**What was happening:** The evaluation code worked correctly — but only for fields already included in the batch query SELECT. The batch query had a fixed field set (`Id`, `CaseNumber`, `Status`, `LastModifiedDate`, `CreatedDate`, `Origin`, `Owner.Name`, `LastModifiedBy.Name`). If a filter referenced any other field (e.g., `Secondary_Call_Reason__c`, `OwnerId`, `INS_Branch_v2__c`), `getFieldValue` caught the resulting exception and returned null, causing the condition to silently fail or pass.
 
-**Real-world example:** The `Cases_Owned_by_Johnny_C_Li` rule filters on `OwnerId = '0058y000000uWpTAAU'`. While `OwnerId` is a standard Case field, it is not in the batch query SELECT. When the engine tries to read it via `getFieldValue`, it gets null, causing a silent mismatch.
+**Real-world example:** The `Cases_Owned_by_Johnny_C_Li` rule filters on `OwnerId = '0058y000000uWpTAAU'`. Another rule filters on `Secondary_Call_Reason__c = 'Amendments' AND INS_Branch_v2__c = 'Business Registration'`. Neither filter worked because those fields were not in the batch query.
 
 **Supported syntax (AND only, no OR):**
 - `Field = 'Value'` / `Field != 'Value'`
@@ -33,13 +33,9 @@ All five rules in the org use `Record_Type_Developer_Names__c = PVL`, meaning ev
 - `Field IN ('Value1', 'Value2')` / `Field NOT IN ('Value1', 'Value2')`
 - `Field = true` / `Field = false`
 
-**Fields available for use (after fixes applied):**
-- `Id`, `CaseNumber`, `Status`, `LastModifiedDate`, `CreatedDate`, `Origin`
-- `Owner.Name`, `LastModifiedBy.Name`, `RecordType.DeveloperName`
+**Note:** Unrecognized filter syntax (typos, malformed conditions) silently passes — the condition is treated as met. This is a pre-existing behavior at line 877 of `util_closer_RuleEngine.cls`. Fields that do not exist on the Case object are logged and skipped.
 
-**Note:** Unrecognized filter syntax (typos, malformed conditions) silently passes — the condition is treated as met. This is a pre-existing behavior at line 877 of `util_closer_RuleEngine.cls`.
-
-**Resolution:** Help text updated to document available fields and supported syntax. Dynamic field extraction (parsing field names from filter strings and adding them to the query at runtime) deferred as a future enhancement.
+**Fix applied:** Added dynamic field extraction in `util_closer_RuleEngine.extractFilterFields()`. At batch start, all active rules' `Additional_Filter_Logic__c` values are scanned, field names are parsed out and validated against the Case object schema, and valid fields are passed to the two-arg `queryCasesByStatus()` overload. This means any valid Case field API name can now be used in filter conditions — fields are automatically included in the batch query at runtime.
 
 ---
 
@@ -122,7 +118,7 @@ Help text updated with:
 
 | Field | Issue | Status | Fix |
 |---|---|---|---|
-| Additional_Filter_Logic__c | Only works for fields in batch query | Documented | Help text lists available fields; dynamic extraction deferred |
+| Additional_Filter_Logic__c | Only works for fields in batch query | Fixed | Dynamic field extraction adds referenced fields to query at runtime |
 | Days_Since_Last_Activity__c | `LastActivityDate` not on Case object | Blocked | Activities not enabled; help text updated |
 | Record_Type_Developer_Names__c | `RecordType.DeveloperName` not in batch query | Fixed | Added to batch query SELECT |
 | Exclude_Record_Type_Developer_Names__c | `RecordType.DeveloperName` not in batch query | Fixed | Added to batch query SELECT |

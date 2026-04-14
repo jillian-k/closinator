@@ -3336,4 +3336,203 @@ private class util_closer_RuleEngine_Test {
 
         resetMockRules();
     }
+
+    // =========================================================================
+    // Tests for extractFilterFields and extractFieldNameFromCondition
+    // =========================================================================
+
+    @isTest
+    static void testExtractFilterFields_WithValidFields() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>{
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule1',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 1,
+                Additional_Filter_Logic__c = 'Priority = \'Low\' AND Subject LIKE \'%Test%\''
+            )
+        };
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assert(fields.contains('Priority'), 'Should extract Priority');
+        System.assert(fields.contains('Subject'), 'Should extract Subject');
+    }
+
+    @isTest
+    static void testExtractFilterFields_SkipsBaseQueryFields() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>{
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule1',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 1,
+                Additional_Filter_Logic__c = 'Status = \'New\' AND Origin = \'Web\''
+            )
+        };
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assertEquals(0, fields.size(), 'Should not extract fields already in the base query');
+    }
+
+    @isTest
+    static void testExtractFilterFields_SkipsInvalidFields() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>{
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule1',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 1,
+                Additional_Filter_Logic__c = 'Totally_Fake_Field__c = \'X\''
+            )
+        };
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assertEquals(0, fields.size(), 'Should not include fields that do not exist on Case');
+    }
+
+    @isTest
+    static void testExtractFilterFields_SkipsRelationshipFields() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>{
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule1',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 1,
+                Additional_Filter_Logic__c = 'Owner.Name LIKE \'%Admin%\''
+            )
+        };
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assertEquals(0, fields.size(), 'Relationship fields are handled by the base query, should not be extracted');
+    }
+
+    @isTest
+    static void testExtractFilterFields_MultipleRules() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>{
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule1',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 1,
+                Additional_Filter_Logic__c = 'Priority = \'High\''
+            ),
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule2',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 2,
+                Additional_Filter_Logic__c = 'Subject LIKE \'%Urgent%\' AND Priority = \'Low\''
+            )
+        };
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assert(fields.contains('Priority'), 'Should extract Priority');
+        System.assert(fields.contains('Subject'), 'Should extract Subject');
+        System.assertEquals(2, fields.size(), 'Should deduplicate Priority across rules');
+    }
+
+    @isTest
+    static void testExtractFilterFields_EmptyRules() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>();
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assertEquals(0, fields.size(), 'Should return empty set for empty rules');
+    }
+
+    @isTest
+    static void testExtractFilterFields_NoFilterLogic() {
+        List<util_closer_Case_Status_Rule__mdt> rules = new List<util_closer_Case_Status_Rule__mdt>{
+            new util_closer_Case_Status_Rule__mdt(
+                DeveloperName = 'Rule1',
+                Is_Active__c = true,
+                Source_Status__c = 'New',
+                Target_Status__c = 'Closed',
+                Execution_Order__c = 1
+            )
+        };
+
+        Test.startTest();
+        Set<String> fields = util_closer_RuleEngine.extractFilterFields(rules);
+        Test.stopTest();
+
+        System.assertEquals(0, fields.size(), 'Should return empty set when no rules have filter logic');
+    }
+
+    @isTest
+    static void testExtractFieldNameFromCondition_Equals() {
+        Test.startTest();
+        String result = util_closer_RuleEngine.extractFieldNameFromCondition('Priority = \'High\'');
+        Test.stopTest();
+
+        System.assertEquals('Priority', result, 'Should extract Priority from equals condition');
+    }
+
+    @isTest
+    static void testExtractFieldNameFromCondition_NotIn() {
+        Test.startTest();
+        String result = util_closer_RuleEngine.extractFieldNameFromCondition('Status NOT IN (\'Closed\', \'Merged\')');
+        Test.stopTest();
+
+        System.assertEquals('Status', result, 'Should extract Status from NOT IN condition');
+    }
+
+    @isTest
+    static void testExtractFieldNameFromCondition_CustomField() {
+        Test.startTest();
+        String result = util_closer_RuleEngine.extractFieldNameFromCondition('Secondary_Call_Reason__c = \'Amendments\'');
+        Test.stopTest();
+
+        System.assertEquals('Secondary_Call_Reason__c', result, 'Should extract custom field name');
+    }
+
+    @isTest
+    static void testExtractFieldNameFromCondition_RelationshipField() {
+        Test.startTest();
+        String result = util_closer_RuleEngine.extractFieldNameFromCondition('Owner.Name LIKE \'%Admin%\'');
+        Test.stopTest();
+
+        System.assertEquals('Owner.Name', result, 'Should extract relationship field name');
+    }
+
+    @isTest
+    static void testExtractFieldNameFromCondition_Blank() {
+        Test.startTest();
+        String result = util_closer_RuleEngine.extractFieldNameFromCondition('');
+        Test.stopTest();
+
+        System.assertEquals(null, result, 'Should return null for blank input');
+    }
+
+    @isTest
+    static void testExtractFieldNameFromCondition_Null() {
+        Test.startTest();
+        String result = util_closer_RuleEngine.extractFieldNameFromCondition(null);
+        Test.stopTest();
+
+        System.assertEquals(null, result, 'Should return null for null input');
+    }
 }

@@ -1,9 +1,9 @@
 # Closinator Additional Updates — Changes Summary
 
-**Date:** April 9, 2026
+**Date:** April 9–13, 2026
 **Branch:** `closinator-additional-updates`
 **Org:** dcca-devcc (Sandbox)
-**Test Results:** 421 tests, 100% passing
+**Test Results:** 100% passing
 
 ---
 
@@ -16,6 +16,16 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 ## Changes by File
 
 ### Apex Classes
+
+**`util_closer_RuleEngine.cls`**
+- Added `extractFilterFields(List<util_closer_Case_Status_Rule__mdt>)` — scans all rules' `Additional_Filter_Logic__c` values, parses field names, validates them against the Case object schema, and returns the set of additional fields needed in the batch query.
+- Added `extractFieldNameFromCondition(String)` — helper that extracts the field API name from a single filter condition string.
+
+**`util_closer_CaseStatusBatch.cls`**
+- Modified `start()` to call `extractFilterFields()` before querying. If additional fields are found, it uses the two-arg `queryCasesByStatus()` overload to include them in the SOQL SELECT. This fixes `Additional_Filter_Logic__c` for any valid Case field.
+
+**`util_closer_RuleEngine_Test.cls`**
+- Added 13 new test methods covering `extractFilterFields` (valid fields, base query fields, invalid fields, relationship fields, multiple rules, empty rules, no filter logic) and `extractFieldNameFromCondition` (equals, NOT IN, custom fields, relationship fields, blank, null).
 
 **`util_closer_CaseDataAccess.cls`**
 - Added `RecordType.DeveloperName` to the static batch query in `queryCasesByStatus(Set<String>)`. This fixes record type inclusion/exclusion filters that were previously silently skipped.
@@ -36,7 +46,7 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 ### Custom Metadata Type Fields
 
 **`Additional_Filter_Logic__c`**
-- Updated description and help text with full syntax reference, supported operators, AND-only limitation, and available field names.
+- Updated description and help text to reflect that any valid Case field API name can now be used. Fields are automatically added to the batch query at runtime.
 
 **`Days_Since_Last_Activity__c`**
 - Updated description and help text to clarify that the field uses `LastActivityDate` (Tasks/Events, not `LastModifiedDate`) and requires Activities to be enabled on the Case object.
@@ -68,16 +78,13 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 **`outstanding-issues-analysis.md`**
 - Updated with org-validated findings from April 9, 2026.
 - Corrected Issue 2 status: `LastActivityDate` does not exist on Case in dcca-devcc (Activities not enabled), so the fix is blocked at the org level.
-- Marked Issues 3, 4, and 5 as fixed.
+- Marked Issues 1, 3, 4, and 5 as fixed. Issue 1 (Additional Filter Logic) fixed via dynamic field extraction on April 13, 2026.
 
 ---
 
 ## What Was NOT Changed
 
-- **`util_closer_RuleEngine.cls`** — No changes. The engine code was already correct; it just needed the right data in the query.
-- **`util_closer_CaseStatusBatch.cls`** — No changes. The batch already calls the one-arg `queryCasesByStatus` which now includes the needed fields.
 - **`Stop_Processing__c` field definition** — Not deleted. The field remains on the CMDT object for backward compatibility; only removed from visible UI surfaces.
-- **`Additional_Filter_Logic__c` dynamic field extraction** — Deferred. Help text documents available fields instead. Can be implemented as a follow-up if admins need to filter on fields beyond the batch query set.
 
 ---
 
@@ -85,7 +92,7 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 
 | Issue | Field | Status |
 |---|---|---|
-| 1. Additional Filter Logic limited by batch query | `Additional_Filter_Logic__c` | Documented in help text; dynamic extraction deferred |
+| 1. Additional Filter Logic limited by batch query | `Additional_Filter_Logic__c` | Fixed — dynamic field extraction adds referenced fields to query at runtime |
 | 2. Days Since Last Activity silently ignored | `Days_Since_Last_Activity__c` | Blocked — `LastActivityDate` not on Case in this org |
 | 3. Record Type filters silently ignored | `Record_Type_Developer_Names__c`, `Exclude_Record_Type_Developer_Names__c` | Fixed |
 | 4. Stop Processing does nothing | `Stop_Processing__c` | Fixed — removed from UI |

@@ -126,6 +126,74 @@ public with sharing class util_closer_RuleEngine {
     }
     
     /**
+     * @description Extracts field API names referenced in Additional_Filter_Logic__c across all rules.
+     * Only returns fields that exist on the Case object and aren't already in the base query.
+     * Used by the batch to dynamically add fields to the SOQL SELECT.
+     * @param rules List of rules to scan for filter field references.
+     * @return Set of validated field API names to add to the query.
+     */
+    public static Set<String> extractFilterFields(List<util_closer_Case_Status_Rule__mdt> rules) {
+        Set<String> fields = new Set<String>();
+        Map<String, Schema.SObjectField> caseFieldMap = Schema.SObjectType.Case.fields.getMap();
+
+        Set<String> baseFields = new Set<String>{
+            'id', 'casenumber', 'status', 'lastmodifieddate', 'createddate', 'origin'
+        };
+
+        for (util_closer_Case_Status_Rule__mdt rule : rules) {
+            if (String.isBlank(rule.Additional_Filter_Logic__c)) {
+                continue;
+            }
+
+            List<String> conditions = splitByAnd(rule.Additional_Filter_Logic__c.trim());
+            for (String condition : conditions) {
+                String fieldName = extractFieldNameFromCondition(condition.trim());
+                if (String.isBlank(fieldName)) {
+                    continue;
+                }
+                if (fieldName.contains('.')) {
+                    continue;
+                }
+                if (baseFields.contains(fieldName.toLowerCase())) {
+                    continue;
+                }
+                if (caseFieldMap.containsKey(fieldName.toLowerCase())) {
+                    fields.add(fieldName);
+                } else {
+                    util_closer_Logger.debug('RuleEngine',
+                        'Additional filter field "' + fieldName + '" not found on Case object, skipping');
+                }
+            }
+        }
+
+        if (!fields.isEmpty()) {
+            util_closer_Logger.debug('RuleEngine',
+                'Extracted ' + fields.size() + ' additional fields from filter logic: ' + fields);
+        }
+
+        return fields;
+    }
+
+    /**
+     * @description Extracts the field name from a single filter condition.
+     * The field name is always the first token in the condition.
+     * @param condition A single condition like "Field = 'Value'" or "Field != null".
+     * @return The field name, or null if it can't be parsed.
+     */
+    @TestVisible
+    private static String extractFieldNameFromCondition(String condition) {
+        if (String.isBlank(condition)) {
+            return null;
+        }
+        Pattern fieldPattern = Pattern.compile('^([\\w.]+)');
+        Matcher m = fieldPattern.matcher(condition.trim());
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /**
      * @description Gets all source statuses from active rules for query binding.
      * @return Set of source status values.
      */
