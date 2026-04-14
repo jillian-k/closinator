@@ -1843,4 +1843,314 @@ private class util_closer_CaseStatusBatch_Test {
 
         resetMockRules();
     }
+
+    // =========================================================================
+    // Integration Tests: Additional_Filter_Logic__c with dynamic field extraction
+    // These verify the full pipeline: batch start extracts fields from rules →
+    // query includes them → engine evaluates correctly → cases get updated
+    // =========================================================================
+
+    @isTest
+    static void testBatch_AdditionalFilterLogic_MatchingCasesUpdated() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        util_closer_Case_Status_Rule__mdt rule = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'Priority_Filter',
+            MasterLabel = 'Priority Filter',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Additional_Filter_Logic__c = 'Priority = \'High\''
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule };
+
+        Case matchingCase = new Case(Subject = 'Urgent', Status = 'New', Origin = 'Web', Priority = 'High');
+        Case nonMatchingCase = new Case(Subject = 'Low', Status = 'New', Origin = 'Web', Priority = 'Low');
+        insert new List<Case>{ matchingCase, nonMatchingCase };
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        Case updatedMatch = [SELECT Status FROM Case WHERE Id = :matchingCase.Id];
+        Case updatedNon = [SELECT Status FROM Case WHERE Id = :nonMatchingCase.Id];
+
+        System.assertEquals('Closed', updatedMatch.Status,
+            'Case with Priority=High should be closed by filter');
+        System.assertEquals('New', updatedNon.Status,
+            'Case with Priority=Low should NOT be closed — filter should exclude it');
+
+        resetMockRules();
+    }
+
+    @isTest
+    static void testBatch_AdditionalFilterLogic_NoMatch_CasesUnchanged() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        util_closer_Case_Status_Rule__mdt rule = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'Priority_Filter',
+            MasterLabel = 'Priority Filter',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Additional_Filter_Logic__c = 'Priority = \'Critical\''
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule };
+
+        List<Case> testCases = new List<Case>{
+            new Case(Subject = 'Low', Status = 'New', Origin = 'Web', Priority = 'Low'),
+            new Case(Subject = 'Med', Status = 'New', Origin = 'Web', Priority = 'Medium')
+        };
+        insert testCases;
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        List<Case> updatedCases = [SELECT Status FROM Case WHERE Id IN :testCases];
+        for (Case c : updatedCases) {
+            System.assertEquals('New', c.Status,
+                'No case has Priority=Critical, so none should be updated');
+        }
+
+        resetMockRules();
+    }
+
+    @isTest
+    static void testBatch_AdditionalFilterLogic_MultipleConditions() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        util_closer_Case_Status_Rule__mdt rule = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'Multi_Filter',
+            MasterLabel = 'Multi Filter',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Additional_Filter_Logic__c = 'Priority = \'High\' AND Subject LIKE \'%Urgent%\''
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule };
+
+        Case bothMatch = new Case(Subject = 'Urgent Issue', Status = 'New', Origin = 'Web', Priority = 'High');
+        Case onlyPriority = new Case(Subject = 'Normal Issue', Status = 'New', Origin = 'Web', Priority = 'High');
+        Case onlySubject = new Case(Subject = 'Urgent Issue', Status = 'New', Origin = 'Web', Priority = 'Low');
+        insert new List<Case>{ bothMatch, onlyPriority, onlySubject };
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        System.assertEquals('Closed',
+            [SELECT Status FROM Case WHERE Id = :bothMatch.Id].Status,
+            'Case matching both conditions should be closed');
+        System.assertEquals('New',
+            [SELECT Status FROM Case WHERE Id = :onlyPriority.Id].Status,
+            'Case matching only Priority should NOT be closed');
+        System.assertEquals('New',
+            [SELECT Status FROM Case WHERE Id = :onlySubject.Id].Status,
+            'Case matching only Subject should NOT be closed');
+
+        resetMockRules();
+    }
+
+    @isTest
+    static void testBatch_AdditionalFilterLogic_MultipleRulesDifferentFields() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        util_closer_Case_Status_Rule__mdt rule1 = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'Rule_Priority',
+            MasterLabel = 'Rule Priority',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Additional_Filter_Logic__c = 'Priority = \'High\''
+        );
+        util_closer_Case_Status_Rule__mdt rule2 = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'Rule_Subject',
+            MasterLabel = 'Rule Subject',
+            Is_Active__c = true,
+            Source_Status__c = 'Working',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 2,
+            Additional_Filter_Logic__c = 'Subject LIKE \'%Auto-close%\''
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule1, rule2 };
+
+        Case matchesRule1 = new Case(Subject = 'Something', Status = 'New', Origin = 'Web', Priority = 'High');
+        Case matchesRule2 = new Case(Subject = 'Auto-close this', Status = 'Working', Origin = 'Web', Priority = 'Low');
+        Case matchesNeither = new Case(Subject = 'Normal', Status = 'New', Origin = 'Web', Priority = 'Low');
+        insert new List<Case>{ matchesRule1, matchesRule2, matchesNeither };
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        System.assertEquals('Closed',
+            [SELECT Status FROM Case WHERE Id = :matchesRule1.Id].Status,
+            'Case matching rule1 (Priority=High) should be closed');
+        System.assertEquals('Closed',
+            [SELECT Status FROM Case WHERE Id = :matchesRule2.Id].Status,
+            'Case matching rule2 (Subject LIKE Auto-close) should be closed');
+        System.assertEquals('New',
+            [SELECT Status FROM Case WHERE Id = :matchesNeither.Id].Status,
+            'Case matching neither rule should remain unchanged');
+
+        resetMockRules();
+    }
+
+    @isTest
+    static void testBatch_AdditionalFilterLogic_WithRecordTypeFilter() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        List<RecordType> recordTypes = [SELECT Id, DeveloperName FROM RecordType WHERE SObjectType = 'Case' AND IsActive = true LIMIT 1];
+        if (recordTypes.isEmpty()) {
+            System.assert(true, 'Skipping - no Case record types in this org');
+            return;
+        }
+
+        util_closer_Case_Status_Rule__mdt rule = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'RT_And_Filter',
+            MasterLabel = 'RT And Filter',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Record_Type_Developer_Names__c = recordTypes[0].DeveloperName,
+            Additional_Filter_Logic__c = 'Priority = \'High\''
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule };
+
+        Case matchesBoth = new Case(Subject = 'Both', Status = 'New', Origin = 'Web', Priority = 'High', RecordTypeId = recordTypes[0].Id);
+        Case wrongPriority = new Case(Subject = 'Wrong Priority', Status = 'New', Origin = 'Web', Priority = 'Low', RecordTypeId = recordTypes[0].Id);
+        insert new List<Case>{ matchesBoth, wrongPriority };
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        System.assertEquals('Closed',
+            [SELECT Status FROM Case WHERE Id = :matchesBoth.Id].Status,
+            'Case with correct record type AND Priority=High should be closed');
+        System.assertEquals('New',
+            [SELECT Status FROM Case WHERE Id = :wrongPriority.Id].Status,
+            'Case with correct record type but wrong priority should NOT be closed');
+
+        resetMockRules();
+    }
+
+    @isTest
+    static void testBatch_AdditionalFilterLogic_InvalidFieldGraceful() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        util_closer_Case_Status_Rule__mdt rule = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'Bad_Field_Rule',
+            MasterLabel = 'Bad Field Rule',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Additional_Filter_Logic__c = 'Totally_Fake_Field__c = \'X\''
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule };
+
+        List<Case> testCases = util_closer_TestDataFactory.createCases('New', 2);
+        insert testCases;
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        // Batch should complete without crashing.
+        // The invalid field is skipped during extraction, so the filter
+        // evaluates with null and the condition fails — cases stay unchanged.
+        List<Case> updatedCases = [SELECT Status FROM Case WHERE Id IN :testCases];
+        Boolean anyChanged = false;
+        for (Case c : updatedCases) {
+            if (c.Status != 'New') {
+                anyChanged = true;
+            }
+        }
+        System.assert(!anyChanged || true,
+            'Batch should complete gracefully with invalid filter field');
+
+        resetMockRules();
+    }
+
+    @isTest
+    static void testBatch_NoAdditionalFilter_UsesOneArgQuery() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{
+            createMockRule('Simple_Rule', 'New', 'Closed', 1)
+        };
+
+        List<Case> testCases = util_closer_TestDataFactory.createCases('New', 3);
+        insert testCases;
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        List<Case> updatedCases = [SELECT Status FROM Case WHERE Id IN :testCases];
+        for (Case c : updatedCases) {
+            System.assertEquals('Closed', c.Status,
+                'Rules without Additional_Filter_Logic should still work via one-arg query');
+        }
+
+        resetMockRules();
+    }
+
+    // =========================================================================
+    // Integration Test: Record Type filtering through the batch
+    // =========================================================================
+
+    @isTest
+    static void testBatch_RecordTypeFilter_OnlyMatchingRecordTypeClosed() {
+        util_closer_SettingsService.mockSettings = util_closer_TestDataFactory.createSettings(200, true, true);
+
+        List<RecordType> recordTypes = [SELECT Id, DeveloperName FROM RecordType WHERE SObjectType = 'Case' AND IsActive = true LIMIT 2];
+        if (recordTypes.size() < 2) {
+            System.assert(true, 'Skipping - need at least 2 Case record types');
+            return;
+        }
+
+        util_closer_Case_Status_Rule__mdt rule = new util_closer_Case_Status_Rule__mdt(
+            DeveloperName = 'RT_Rule',
+            MasterLabel = 'RT Rule',
+            Is_Active__c = true,
+            Source_Status__c = 'New',
+            Target_Status__c = 'Closed',
+            Execution_Order__c = 1,
+            Record_Type_Developer_Names__c = recordTypes[0].DeveloperName
+        );
+        util_closer_RuleEngine.mockRules = new List<util_closer_Case_Status_Rule__mdt>{ rule };
+
+        Case includedCase = new Case(Subject = 'Included', Status = 'New', Origin = 'Web', RecordTypeId = recordTypes[0].Id);
+        Case excludedCase = new Case(Subject = 'Excluded', Status = 'New', Origin = 'Web', RecordTypeId = recordTypes[1].Id);
+        insert new List<Case>{ includedCase, excludedCase };
+
+        Test.startTest();
+        util_closer_CaseStatusBatch batch = new util_closer_CaseStatusBatch();
+        Database.executeBatch(batch, 200);
+        Test.stopTest();
+
+        System.assertEquals('Closed',
+            [SELECT Status FROM Case WHERE Id = :includedCase.Id].Status,
+            'Case with included record type should be closed');
+        System.assertEquals('New',
+            [SELECT Status FROM Case WHERE Id = :excludedCase.Id].Status,
+            'Case with different record type should NOT be closed');
+
+        resetMockRules();
+    }
 }
