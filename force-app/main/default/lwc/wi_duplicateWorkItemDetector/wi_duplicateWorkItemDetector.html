@@ -1,0 +1,83 @@
+<template>
+    <lightning-card title={cardTitle} icon-name="standard:work_order">
+        <template lwc:if={showRefreshButton}>
+            <lightning-button
+                slot="actions"
+                label="Refresh"
+                icon-name="utility:refresh"
+                onclick={handleRefresh}
+                variant="neutral"
+                disabled={isLoading}>
+            </lightning-button>
+        </template>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_small">
+
+            <template lwc:if={isAlreadyLinked}>
+                <p class="slds-text-body_small slds-text-color_weak slds-p-bottom_x-small">
+                    This Case is linked as a duplicate of:
+                </p>
+                <dl class="slds-dl_horizontal">
+                    <dt class="slds-dl_horizontal__label slds-text-title_caps">Work Item</dt>
+                    <dd class="slds-dl_horizontal__detail">
+                        <a href={linkedWorkItemUrl}>{linkedWorkItemName}</a>
+                        <template lwc:if={linkedWorkItemStatus}>
+                            <span class="slds-text-color_weak slds-p-left_x-small">({linkedWorkItemStatus})</span>
+                        </template>
+                    </dd>
+                    <template lwc:if={linkedParentCaseId}>
+                        <dt class="slds-dl_horizontal__label slds-text-title_caps">Original Case</dt>
+                        <dd class="slds-dl_horizontal__detail">
+                            <a href={linkedParentCaseUrl}>{linkedParentCaseNumber}</a>
+                        </dd>
+                    </template>
+                </dl>
+            </template>
+
+            <template lwc:elif={isLoading}>
+                <div class="slds-is-relative slds-p-vertical_large">
+                    <lightning-spinner alternative-text="Loading related Work Items"></lightning-spinner>
+                </div>
+            </template>
+
+            <template lwc:elif={hasError}>
+                <div class="slds-text-color_error">{errorMessage}</div>
+            </template>
+
+            <template lwc:elif={hasNoMatches}>
+                <div class="slds-text-color_weak slds-p-vertical_x-small">
+                    No open Work Items were found for this caller's phone number.
+                </div>
+            </template>
+
+            <template lwc:else>
+                <p class="slds-text-body_small slds-text-color_weak slds-p-bottom_x-small">
+                    Select an existing Work Item to link this Case as a duplicate and close it.
+                </p>
+
+                <div style="height: 12rem;">
+                    <lightning-datatable
+                        key-field="workItemId"
+                        data={workItems}
+                        columns={columns}
+                        selected-rows={selectedRowIds}
+                        max-row-selection="1"
+                        onrowselection={handleRowSelection}
+                        hide-checkbox-column={hideCheckbox}>
+                    </lightning-datatable>
+                </div>
+
+                <div class="slds-grid slds-grid_align-end slds-p-top_small">
+                    <lightning-button
+                        label="Link & Close"
+                        icon-name="utility:link"
+                        variant="brand"
+                        disabled={linkDisabled}
+                        onclick={handleLinkAndClose}>
+                    </lightning-button>
+                </div>
+            </template>
+
+        </div>
+    </lightning-card>
+</template>

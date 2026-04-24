@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Work_Item__c</fullName>
+    <description>Lookup to the Work Item this Case is a duplicate/repeat-call of. Populated when the agent uses the Duplicate Work Item Detection LWC to link and close a repeat-call Case against an existing open Work Item.</description>
+    <inlineHelpText>Points to the existing open Work Item this Case is a repeat call for. Set automatically when the agent uses the Related Work Items panel to link and close the Case.</inlineHelpText>
+    <label>Work Item</label>
+    <referenceTo>Work_Item__c</referenceTo>
+    <relationshipLabel>Duplicate / Repeat-Call Cases</relationshipLabel>
+    <relationshipName>Duplicate_Cases</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>
