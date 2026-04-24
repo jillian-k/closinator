@@ -1,6 +1,6 @@
 # Closinator Additional Updates — Changes Summary
 
-**Date:** April 9–13, 2026
+**Date:** April 9–14, 2026
 **Branch:** `closinator-additional-updates`
 **Org:** dcca-devcc (Sandbox)
 **Test Results:** 100% passing
@@ -38,6 +38,9 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 **`util_closer_RuleViewerController_Test.cls`**
 - Removed the `stopProcessing` assertion from `testGetActiveRules_VerifyAllFieldMapping` to match the controller change.
 
+**`util_closer_CaseStatusBatch_Test.cls`**
+- Added 8 batch-level integration tests covering the full pipeline for `Additional_Filter_Logic__c` (matching, non-matching, multiple conditions, null field, invalid field) and `Record_Type_Developer_Names__c` (inclusion, exclusion, combined with other filters). These tests verify end-to-end from batch start through field extraction, query execution, rule evaluation, and case status update.
+
 ### LWC
 
 **`util_closer_RuleViewer.html`**
@@ -46,7 +49,7 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 ### Custom Metadata Type Fields
 
 **`Additional_Filter_Logic__c`**
-- Updated description and help text to reflect that any valid Case field API name can now be used. Fields are automatically added to the batch query at runtime.
+- Updated description and help text to clarify: filters on Case fields only, not child object fields. Directs admins to the Child Record Criteria section for child filtering. Documents that any valid Case field API name can be used and fields are automatically added to the batch query at runtime.
 
 **`Days_Since_Last_Activity__c`**
 - Updated description and help text to clarify that the field uses `LastActivityDate` (Tasks/Events, not `LastModifiedDate`) and requires Activities to be enabled on the Case object.
@@ -67,6 +70,7 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 
 **`util_closer_Case_Status_Rule__mdt-Case Status Rule Layout`**
 - Removed `Stop_Processing__c` from the Rule Information section.
+- Renamed "Advanced Filtering" section to "Additional Case Filters" to clarify it applies to Case fields only.
 
 ### List Views
 
@@ -79,6 +83,13 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 - Updated with org-validated findings from April 9, 2026.
 - Corrected Issue 2 status: `LastActivityDate` does not exist on Case in dcca-devcc (Activities not enabled), so the fix is blocked at the org level.
 - Marked Issues 1, 3, 4, and 5 as fixed. Issue 1 (Additional Filter Logic) fixed via dynamic field extraction on April 13, 2026.
+
+---
+
+## Known Limitations
+
+- **Unrecognized filter syntax silently passes** — If `Additional_Filter_Logic__c` contains a condition that doesn't match any supported pattern (e.g., `>`, `<`, `>=`, `BETWEEN`, or relationship field notation like `Owner.Name`), the condition is treated as met and the case passes the filter. This means a malformed condition could cause a rule to match *more* cases than intended, not fewer. This is pre-existing behavior (line 945 of `util_closer_RuleEngine.cls`) and was not changed in this release. Fields that don't exist on the Case object are validated and logged, but syntax errors in otherwise valid patterns are not caught.
+- **OR logic not supported** — `Additional_Filter_Logic__c` splits conditions by `AND` only. Any `OR` in a condition string will be treated as part of a single condition and likely fail to match a pattern, falling into the "silently passes" behavior above.
 
 ---
 
@@ -119,9 +130,9 @@ This changeset fixes silent failures in the Closinator's rule evaluation system 
 | util_closer_SchedulerController | 93% |
 | util_closer_LogCleanupBatch | 92% |
 | util_closer_CaseStatusBatch | 87% |
-| util_closer_RuleEngine | 83% |
+| util_closer_RuleEngine | 86% |
 
-The two classes below 90% have pre-existing uncovered lines unrelated to this changeset. `util_closer_RuleEngine` at 83% is primarily due to the `LastActivityDate` code paths (lines 292+) which cannot execute because the field doesn't exist on Case in this org.
+**442 tests, 100% pass rate.** The two classes below 90% have pre-existing uncovered lines unrelated to this changeset. `util_closer_RuleEngine` at 86% is primarily due to the `LastActivityDate` code paths (lines 292+) which cannot execute because the field doesn't exist on Case in this org.
 
 ---
 
