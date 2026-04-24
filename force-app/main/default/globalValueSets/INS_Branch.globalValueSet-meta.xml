@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>Office Services</fullName>
+        <default>false</default>
+        <label>Office Services</label>
+    </customValue>
+    <customValue>
+        <fullName>Licensing</fullName>
+        <default>false</default>
+        <label>Licensing</label>
+    </customValue>
+    <customValue>
+        <fullName>FS&amp;E</fullName>
+        <default>false</default>
+        <label>FS&amp;E</label>
+    </customValue>
+    <customValue>
+        <fullName>C&amp;E</fullName>
+        <default>false</default>
+        <label>C&amp;E</label>
+    </customValue>
+    <customValue>
+        <fullName>Captives</fullName>
+        <default>false</default>
+        <label>Captives</label>
+    </customValue>
+    <customValue>
+        <fullName>Legal</fullName>
+        <default>false</default>
+        <label>Legal</label>
+    </customValue>
+    <customValue>
+        <fullName>Fraud</fullName>
+        <default>false</default>
+        <label>Fraud</label>
+    </customValue>
+    <customValue>
+        <fullName>Health</fullName>
+        <default>false</default>
+        <label>Health</label>
+    </customValue>
+    <customValue>
+        <fullName>P&amp;C</fullName>
+        <default>false</default>
+        <label>P&amp;C</label>
+    </customValue>
+    <customValue>
+        <fullName>LAH</fullName>
+        <default>false</default>
+        <label>LAH</label>
+    </customValue>
+    <customValue>
+        <fullName>Securities Enforcement</fullName>
+        <default>false</default>
+        <label>Securities Enforcement</label>
+    </customValue>
+    <customValue>
+        <fullName>Securities Compliance / Investor Education</fullName>
+        <default>false</default>
+        <label>Securities Compliance / Investor Education</label>
+    </customValue>
+    <customValue>
+        <fullName>Business Registration</fullName>
+        <default>false</default>
+        <label>Business Registration</label>
+    </customValue>
+    <customValue>
+        <fullName>Documents Registration/BREG/BRIMS</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Documents Registration/BREG/BRIMS</label>
+    </customValue>
+    <customValue>
+        <fullName>Documents Registration/Business Action Center</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Documents Registration/Business Action Center</label>
+    </customValue>
+    <customValue>
+        <fullName>Securities Compliance</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Securities Compliance</label>
+    </customValue>
+    <customValue>
+        <fullName>Documents Registration</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Documents Registration</label>
+    </customValue>
+    <customValue>
+        <fullName>Business Action Center</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Business Action Center</label>
+    </customValue>
+    <customValue>
+        <fullName>RPA</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>RPA</label>
+    </customValue>
+    <customValue>
+        <fullName>Captive</fullName>
+        <default>false</default>
+        <isActive>false</isActive>
+        <label>Captive</label>
+    </customValue>
+    <description>List of INS Branches or other Division teams under DCCA</description>
+    <masterLabel>Branch</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>
