@@ -32,6 +32,12 @@ node_modules/
 
 # MacOS system files
 .DS_Store
+# macOS Finder duplicates (e.g. "file 2.cls", "thing 2.xml")
+* 2.*
+* 2
+
+# Cursor / Claude agent working directories
+.claude/
 
 # Windows system files
 Thumbs.db
