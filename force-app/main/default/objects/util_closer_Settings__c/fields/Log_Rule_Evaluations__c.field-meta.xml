@@ -3,7 +3,6 @@
     <fullName>Log_Rule_Evaluations__c</fullName>
     <defaultValue>false</defaultValue>
     <description>When enabled, logs detailed per-rule evaluation results for each case.</description>
-    <externalId>false</externalId>
     <inlineHelpText>Enable to include detailed rule evaluation information in case logs. Requires Verbose Logging to be enabled.</inlineHelpText>
     <label>Log Rule Evaluations</label>
     <trackTrending>false</trackTrending>

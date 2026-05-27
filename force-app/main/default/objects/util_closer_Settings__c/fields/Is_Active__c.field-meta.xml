@@ -3,10 +3,8 @@
     <fullName>Is_Active__c</fullName>
     <defaultValue>true</defaultValue>
     <description>Master switch to enable/disable the batch job.</description>
-    <externalId>false</externalId>
     <inlineHelpText>When unchecked, the batch job will not process any records.</inlineHelpText>
     <label>Is Active</label>
     <trackTrending>false</trackTrending>
     <type>Checkbox</type>
 </CustomField>
-

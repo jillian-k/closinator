@@ -11,4 +11,5 @@
     <scale>2</scale>
     <trackTrending>false</trackTrending>
     <type>Number</type>
+    <unique>false</unique>
 </CustomField>

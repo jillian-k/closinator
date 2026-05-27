@@ -3,7 +3,6 @@
     <fullName>Case__c</fullName>
     <deleteConstraint>SetNull</deleteConstraint>
     <description>Reference to the evaluated Case</description>
-    <externalId>false</externalId>
     <label>Case</label>
     <referenceTo>Case</referenceTo>
     <relationshipLabel>Case Auto-Closer Logs</relationshipLabel>

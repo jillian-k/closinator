@@ -245,6 +245,11 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>false</editable>
+        <field>Case.DCCA_Final_Division_Not_Set_Hidden__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>true</editable>
         <field>Case.DCCA_Resource__c</field>
         <readable>true</readable>
@@ -500,11 +505,6 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>Case.Work_Item__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
         <editable>false</editable>
         <field>Case.UJET__EngineeringReqNumber__c</field>
         <readable>true</readable>
@@ -542,6 +542,11 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Case.Utility_Dispute_OCP__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Case.Work_Item__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

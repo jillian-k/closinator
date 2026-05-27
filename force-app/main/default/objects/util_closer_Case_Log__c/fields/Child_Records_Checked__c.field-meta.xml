@@ -3,7 +3,6 @@
     <fullName>Child_Records_Checked__c</fullName>
     <defaultValue>false</defaultValue>
     <description>Whether child record criteria was evaluated</description>
-    <externalId>false</externalId>
     <label>Child Records Checked</label>
     <trackTrending>false</trackTrending>
     <type>Checkbox</type>

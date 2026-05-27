@@ -2,7 +2,6 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Processing_Result__c</fullName>
     <description>Result of processing this Case</description>
-    <externalId>false</externalId>
     <label>Processing Result</label>
     <required>false</required>
     <trackTrending>false</trackTrending>

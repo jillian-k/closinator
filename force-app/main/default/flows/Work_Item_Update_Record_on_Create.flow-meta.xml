@@ -68,6 +68,12 @@
             </value>
         </inputParameters>
         <inputParameters>
+            <name>senderAddress</name>
+            <value>
+                <stringValue></stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
             <name>composeEmailContent</name>
             <value>
                 <stringValue>True</stringValue>
@@ -96,6 +102,9 @@
             <value>
                 <booleanValue>true</booleanValue>
             </value>
+        </inputParameters>
+        <inputParameters>
+            <name>recipientId</name>
         </inputParameters>
         <inputParameters>
             <name>relatedRecordId</name>
@@ -234,38 +243,6 @@
         </connector>
     </assignments>
     <assignments>
-        <name>Assign_Email_ID</name>
-        <label>Assign Email ID</label>
-        <locationX>0</locationX>
-        <locationY>0</locationY>
-        <assignmentItems>
-            <assignToReference>var_NotificationEmailRecipients</assignToReference>
-            <operator>Add</operator>
-            <value>
-                <elementReference>Get_Routing_Detail_Record.Notification_Email_Address__c</elementReference>
-            </value>
-        </assignmentItems>
-        <connector>
-            <targetReference>Update_Work_Item</targetReference>
-        </connector>
-    </assignments>
-    <assignments>
-        <name>Assign_Email_ID_BREG</name>
-        <label>Assign Email ID</label>
-        <locationX>0</locationX>
-        <locationY>0</locationY>
-        <assignmentItems>
-            <assignToReference>var_NotificationEmailRecipients</assignToReference>
-            <operator>Add</operator>
-            <value>
-                <elementReference>Get_Routing_Detail_Record_for_BREG.Notification_Email_Address__c</elementReference>
-            </value>
-        </assignmentItems>
-        <connector>
-            <targetReference>Update_Work_Item_BREG_Work_Item</targetReference>
-        </connector>
-    </assignments>
-    <assignments>
         <name>Assign_Priority_Flag</name>
         <label>Assign Priority Flag</label>
         <locationX>0</locationX>
@@ -356,31 +333,6 @@
         </rules>
     </decisions>
     <decisions>
-        <name>BREG_Work_Item</name>
-        <label>BREG Work Item?</label>
-        <locationX>0</locationX>
-        <locationY>0</locationY>
-        <defaultConnector>
-            <targetReference>Get_Routing_Detail_Record</targetReference>
-        </defaultConnector>
-        <defaultConnectorLabel>Not BREG</defaultConnectorLabel>
-        <rules>
-            <name>Yes_BREG</name>
-            <conditionLogic>and</conditionLogic>
-            <conditions>
-                <leftValueReference>$Record.RecordType.Name</leftValueReference>
-                <operator>EqualTo</operator>
-                <rightValue>
-                    <stringValue>BREG</stringValue>
-                </rightValue>
-            </conditions>
-            <connector>
-                <targetReference>Get_Routing_Detail_Record_for_BREG</targetReference>
-            </connector>
-            <label>Yes - BREG</label>
-        </rules>
-    </decisions>
-    <decisions>
         <name>Clerk_Type</name>
         <label>Clerk Type</label>
         <locationX>0</locationX>
@@ -396,7 +348,7 @@
                 <leftValueReference>$Record.License_Stage__c</leftValueReference>
                 <operator>EqualTo</operator>
                 <rightValue>
-                    <stringValue>Application</stringValue>
+                    <stringValue>Applying</stringValue>
                 </rightValue>
             </conditions>
             <connector>
@@ -680,7 +632,7 @@
         <locationY>0</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
-            <targetReference>BREG_Work_Item</targetReference>
+            <targetReference>Get_Routing_Detail_Record</targetReference>
         </connector>
         <filterLogic>and</filterLogic>
         <filters>
@@ -703,7 +655,7 @@
         <locationY>0</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
-            <targetReference>Assign_Email_ID</targetReference>
+            <targetReference>Update_Work_Item</targetReference>
         </connector>
         <filterLogic>and</filterLogic>
         <filters>
@@ -718,27 +670,6 @@
             <operator>EqualTo</operator>
             <value>
                 <elementReference>$Record.INS_Branch__c</elementReference>
-            </value>
-        </filters>
-        <getFirstRecordOnly>true</getFirstRecordOnly>
-        <object>Work_Item_Routing__mdt</object>
-        <storeOutputAutomatically>true</storeOutputAutomatically>
-    </recordLookups>
-    <recordLookups>
-        <name>Get_Routing_Detail_Record_for_BREG</name>
-        <label>Get Routing Detail Record for BREG</label>
-        <locationX>0</locationX>
-        <locationY>0</locationY>
-        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
-        <connector>
-            <targetReference>Assign_Email_ID_BREG</targetReference>
-        </connector>
-        <filterLogic>and</filterLogic>
-        <filters>
-            <field>Division__c</field>
-            <operator>EqualTo</operator>
-            <value>
-                <elementReference>$Record.RecordType.Name</elementReference>
             </value>
         </filters>
         <getFirstRecordOnly>true</getFirstRecordOnly>
@@ -868,58 +799,6 @@
             <field>OwnerId</field>
             <value>
                 <elementReference>Get_Routing_Detail_Record.Division_Branch_Queue_Id__c</elementReference>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>Status__c</field>
-            <value>
-                <stringValue>New</stringValue>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>Voice_Call_Session__c</field>
-            <value>
-                <elementReference>Get_Related_Voice_Call_Session_Record.Id</elementReference>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>Work_Item_Caller_Type__c</field>
-            <value>
-                <elementReference>Get_Related_Case.OCP_Caller_Type__c</elementReference>
-            </value>
-        </inputAssignments>
-        <inputReference>$Record</inputReference>
-    </recordUpdates>
-    <recordUpdates>
-        <name>Update_Work_Item_BREG_Work_Item</name>
-        <label>Update BREG Work Item</label>
-        <locationX>0</locationX>
-        <locationY>0</locationY>
-        <connector>
-            <targetReference>High_Priority</targetReference>
-        </connector>
-        <inputAssignments>
-            <field>INS_Branch__c</field>
-            <value>
-                <elementReference>Get_Related_Case.INS_Branch_v2__c</elementReference>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>Island_of_Residence__c</field>
-            <value>
-                <elementReference>Get_Related_Case.Island__c</elementReference>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>OCP_Work_Item_Type__c</field>
-            <value>
-                <elementReference>Get_Related_Case.Issue_Type__c</elementReference>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
-            <field>OwnerId</field>
-            <value>
-                <elementReference>Get_Routing_Detail_Record_for_BREG.Division_Branch_Queue_Id__c</elementReference>
             </value>
         </inputAssignments>
         <inputAssignments>
