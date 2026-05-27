@@ -4,13 +4,13 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>c:util_closer_schedulerManager</componentName>
+                <componentName>util_closer_schedulerManager</componentName>
                 <identifier>schedulerManager</identifier>
             </componentInstance>
         </itemInstances>
         <itemInstances>
             <componentInstance>
-                <componentName>c:util_closer_LogViewer</componentName>
+                <componentName>util_closer_LogViewer</componentName>
                 <identifier>logViewer</identifier>
             </componentInstance>
         </itemInstances>

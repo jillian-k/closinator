@@ -3,7 +3,6 @@
     <fullName>Running_User__c</fullName>
     <deleteConstraint>SetNull</deleteConstraint>
     <description>The user who initiated the batch job</description>
-    <externalId>false</externalId>
     <label>Running User</label>
     <referenceTo>User</referenceTo>
     <relationshipLabel>Batch Logs</relationshipLabel>

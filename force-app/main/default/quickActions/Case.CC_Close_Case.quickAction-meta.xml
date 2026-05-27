@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Action for DCCA to close a Call Center case</description>
+    <flowDefinition>CC_Case_Close_Case</flowDefinition>
+    <label>Close Call Center Case</label>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>Flow</type>
+</QuickAction>

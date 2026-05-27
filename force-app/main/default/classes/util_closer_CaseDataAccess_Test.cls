@@ -30,17 +30,18 @@ private class util_closer_CaseDataAccess_Test {
         Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesByStatus(sourceStatuses);
         Test.stopTest();
         
-        // Verify - QueryLocator should be created successfully
+        // Verify - iterate the QueryLocator and validate actual class output
         System.assertNotEquals(null, ql, 'QueryLocator should not be null');
         
-        // Verify results by querying directly
-        List<Case> results = [
-            SELECT Id, Status, IsClosed 
-            FROM Case 
-            WHERE IsClosed = false 
-            AND Status IN :sourceStatuses
-        ];
+        Database.QueryLocatorIterator it = ql.iterator();
+        List<Case> results = new List<Case>();
+        while (it.hasNext()) {
+            results.add((Case) it.next());
+        }
         System.assertEquals(3, results.size(), 'Should return 3 open cases with matching statuses');
+        for (Case c : results) {
+            System.assert(sourceStatuses.contains(c.Status), 'Returned case status should match input');
+        }
     }
     
     @isTest
@@ -78,12 +79,15 @@ private class util_closer_CaseDataAccess_Test {
         Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesByStatus(sourceStatuses);
         Test.stopTest();
         
-        // Verify - QueryLocator should be created
+        // Verify - iterate the QueryLocator and confirm no records returned
         System.assertNotEquals(null, ql, 'QueryLocator should not be null');
         
-        // Verify no closed cases are returned
-        List<Case> results = [SELECT Id FROM Case WHERE IsClosed = false AND Status = 'Closed'];
-        System.assertEquals(0, results.size(), 'Should exclude closed cases');
+        Database.QueryLocatorIterator it = ql.iterator();
+        List<Case> results = new List<Case>();
+        while (it.hasNext()) {
+            results.add((Case) it.next());
+        }
+        System.assertEquals(0, results.size(), 'Closed cases should be excluded by IsClosed = false filter');
     }
     
     @isTest
@@ -97,8 +101,13 @@ private class util_closer_CaseDataAccess_Test {
         Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesByStatus(sourceStatuses, additionalFields);
         Test.stopTest();
         
-        // Verify - QueryLocator should be created
+        // Verify - iterate QueryLocator and confirm dynamic fields are accessible
         System.assertNotEquals(null, ql, 'QueryLocator should not be null');
+        Database.QueryLocatorIterator it = ql.iterator();
+        System.assert(it.hasNext(), 'Should return at least one record');
+        Case result = (Case) it.next();
+        System.assertNotEquals(null, result.Subject, 'Additional field Subject should be queryable');
+        System.assertNotEquals(null, result.Origin, 'Additional field Origin should be queryable');
     }
     
     @isTest
@@ -131,6 +140,39 @@ private class util_closer_CaseDataAccess_Test {
     }
     
     @isTest
+    static void testQueryCasesByStatus_WithAdditionalFields_EmptyStatuses() {
+        // Setup - 2-arg overload with empty sourceStatuses
+        Set<String> sourceStatuses = new Set<String>();
+        Set<String> additionalFields = new Set<String>{ 'Subject', 'Origin' };
+        
+        // Execute
+        Test.startTest();
+        Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesByStatus(sourceStatuses, additionalFields);
+        Test.stopTest();
+        
+        // Verify - should return empty query, not crash
+        System.assertNotEquals(null, ql, 'QueryLocator should not be null for empty statuses');
+        Database.QueryLocatorIterator it = ql.iterator();
+        System.assert(!it.hasNext(), 'Empty sourceStatuses should return no records');
+    }
+    
+    @isTest
+    static void testQueryCasesByStatus_WithAdditionalFields_NullStatuses() {
+        // Setup - 2-arg overload with null sourceStatuses
+        Set<String> additionalFields = new Set<String>{ 'Subject', 'Origin' };
+        
+        // Execute
+        Test.startTest();
+        Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesByStatus(null, additionalFields);
+        Test.stopTest();
+        
+        // Verify - should return empty query, not crash
+        System.assertNotEquals(null, ql, 'QueryLocator should not be null for null statuses');
+        Database.QueryLocatorIterator it = ql.iterator();
+        System.assert(!it.hasNext(), 'Null sourceStatuses should return no records');
+    }
+    
+    @isTest
     static void testQueryCasesWithCustomWhere_ValidWhereClause() {
         // Setup
         String whereClause = 'IsClosed = false AND Status = \'New\'';
@@ -141,8 +183,15 @@ private class util_closer_CaseDataAccess_Test {
         Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesWithCustomWhere(whereClause, additionalFields);
         Test.stopTest();
         
-        // Verify - QueryLocator should be created
+        // Verify - iterate QueryLocator and validate results match custom WHERE
         System.assertNotEquals(null, ql, 'QueryLocator should not be null');
+        Database.QueryLocatorIterator it = ql.iterator();
+        List<Case> results = new List<Case>();
+        while (it.hasNext()) {
+            results.add((Case) it.next());
+        }
+        System.assertEquals(1, results.size(), 'Custom WHERE should return 1 New case');
+        System.assertEquals('New', results[0].Status, 'Returned case should have Status New');
     }
     
     @isTest
@@ -185,8 +234,13 @@ private class util_closer_CaseDataAccess_Test {
         Database.QueryLocator ql = util_closer_CaseDataAccess.queryCasesWithCustomWhere(whereClause, additionalFields);
         Test.stopTest();
 
-        // Verify - QueryLocator should be created
+        // Verify - iterate QueryLocator and confirm dynamic fields are accessible
         System.assertNotEquals(null, ql, 'QueryLocator should not be null');
+        Database.QueryLocatorIterator it = ql.iterator();
+        System.assert(it.hasNext(), 'Should return at least one record');
+        Case result = (Case) it.next();
+        System.assertNotEquals(null, result.Subject, 'Subject should be accessible');
+        System.assertNotEquals(null, result.Origin, 'Origin should be accessible');
     }
 
     // ==================== Child Record Query Tests ====================
@@ -417,8 +471,12 @@ private class util_closer_CaseDataAccess_Test {
         Database.QueryLocatorIterator it = ql.iterator();
         Test.stopTest();
 
-        // Verify - QueryLocator should work and include additional fields
+        // Verify - iterate and confirm additional fields are populated
         System.assertNotEquals(null, ql, 'QueryLocator should not be null');
+        System.assert(it.hasNext(), 'Should return at least one record');
+        Case result = (Case) it.next();
+        System.assertNotEquals(null, result.Subject, 'Subject should be populated');
+        System.assertNotEquals(null, result.Origin, 'Origin should be populated');
     }
 
     @isTest

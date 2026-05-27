@@ -3,10 +3,8 @@
     <fullName>Debug_Mode__c</fullName>
     <defaultValue>false</defaultValue>
     <description>When true, emit verbose debug logs during batch execution.</description>
-    <externalId>false</externalId>
     <inlineHelpText>Enable to output detailed debug logs during batch processing.</inlineHelpText>
     <label>Debug Mode</label>
     <trackTrending>false</trackTrending>
     <type>Checkbox</type>
 </CustomField>
-

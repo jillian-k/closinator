@@ -234,4 +234,3 @@ private class util_closer_NotificationService_Test {
         System.assertEquals(1, emailsAfter - emailsBefore, 'Email should be sent even with empty metrics');
     }
 }
-

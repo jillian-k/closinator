@@ -1,9 +1,9 @@
 # Closinator — Outstanding Issues Analysis
 
 **Original Date:** March 23, 2026
-**Updated:** April 13, 2026
+**Updated:** April 14, 2026
 **Org:** dcca-devcc (Sandbox)
-**Source of Truth:** Code retrieved directly from dcca-devcc org on April 9, 2026; Issue 1 fix applied April 13, 2026
+**Source of Truth:** Code retrieved directly from dcca-devcc org on April 9, 2026; Issue 1 fix applied April 13, 2026; documentation and UI clarifications deployed April 14, 2026
 
 ---
 
@@ -19,8 +19,8 @@ All five rules in the org use `Record_Type_Developer_Names__c = PVL`, meaning ev
 
 **Status:** Fixed
 **Field:** `Additional_Filter_Logic__c`
-**UI Location:** Advanced Filtering section
-**Appears to do:** Allow admins to enter custom filter conditions that restrict which cases a rule applies to
+**UI Location:** Additional Case Filters section (previously "Advanced Filtering")
+**Applies to:** Case fields only — child object filtering is handled by the Child Record Criteria section
 
 **What was happening:** The evaluation code worked correctly — but only for fields already included in the batch query SELECT. The batch query had a fixed field set (`Id`, `CaseNumber`, `Status`, `LastModifiedDate`, `CreatedDate`, `Origin`, `Owner.Name`, `LastModifiedBy.Name`). If a filter referenced any other field (e.g., `Secondary_Call_Reason__c`, `OwnerId`, `INS_Branch_v2__c`), `getFieldValue` caught the resulting exception and returned null, causing the condition to silently fail or pass.
 
@@ -33,9 +33,15 @@ All five rules in the org use `Record_Type_Developer_Names__c = PVL`, meaning ev
 - `Field IN ('Value1', 'Value2')` / `Field NOT IN ('Value1', 'Value2')`
 - `Field = true` / `Field = false`
 
-**Note:** Unrecognized filter syntax (typos, malformed conditions) silently passes — the condition is treated as met. This is a pre-existing behavior at line 877 of `util_closer_RuleEngine.cls`. Fields that do not exist on the Case object are logged and skipped.
+**What works reliably:**
+- Any standard or custom Case field API name (e.g., `Priority`, `Secondary_Call_Reason__c`, `OwnerId`, `Subject`) — these are validated against the Case schema and automatically added to the batch query.
+- A misspelled field name in a valid syntax pattern (e.g., `Prioirty = 'High'`) will cause the field value to be null, which fails the comparison and excludes the case. This is the safe direction.
 
-**Fix applied:** Added dynamic field extraction in `util_closer_RuleEngine.extractFilterFields()`. At batch start, all active rules' `Additional_Filter_Logic__c` values are scanned, field names are parsed out and validated against the Case object schema, and valid fields are passed to the two-arg `queryCasesByStatus()` overload. This means any valid Case field API name can now be used in filter conditions — fields are automatically included in the batch query at runtime.
+**Known limitation — unrecognized syntax silently passes:** If the condition doesn't match any supported pattern (e.g., unsupported operator like `>` or `<`, or relationship field notation like `Owner.Name`), the condition is treated as met and the case passes the filter. This is a pre-existing behavior at line 945 of `util_closer_RuleEngine.cls`. Relationship fields `Owner.Name`, `LastModifiedBy.Name`, and `RecordType.DeveloperName` are already in the base query and accessible via other rule fields — they do not need to be used in Additional Filter Logic.
+
+**Fix applied:** Added dynamic field extraction in `util_closer_RuleEngine.extractFilterFields()`. At batch start, all active rules' `Additional_Filter_Logic__c` values are scanned, field names are parsed out and validated against the Case object schema, and valid fields are passed to the two-arg `queryCasesByStatus()` overload. The batch `start()` method in `util_closer_CaseStatusBatch.cls` now calls this extraction before querying.
+
+**UI clarifications:** Layout section renamed from "Advanced Filtering" to "Additional Case Filters." Help text now opens with "Filters on Case fields only" and directs admins to the Child Record Criteria section for child object filtering.
 
 ---
 
@@ -108,9 +114,11 @@ The field and metadata remain on the object. The Apex code is unchanged — both
 Help text updated with:
 - Supported syntax and operators
 - Input format (semicolons, Developer Names vs labels, single quotes)
-- Available fields for Additional Filter Logic
+- Case-only clarification for Additional Filter Logic (directs admins to Child Record Criteria for child objects)
 - Case sensitivity notes for Child Filter Operator (Equals is case-sensitive, Contains is case-insensitive)
 - Behavioral clarifications (LastActivityDate vs LastModifiedDate)
+
+Layout section "Advanced Filtering" renamed to "Additional Case Filters" for clarity.
 
 ---
 
@@ -130,3 +138,5 @@ Help text updated with:
 - **Two-arg `queryCasesByStatus` overload** — base field set aligned with the one-arg method to prevent future drift. Previously only included `Id, Status, LastModifiedDate, CreatedDate`, missing fields the one-arg method selects.
 - **`queryCasesWithCustomWhere`** — same alignment applied.
 - **`Stop_Processing__c` field description** — updated to note the field is non-functional.
+- **Layout section renamed** — "Advanced Filtering" → "Additional Case Filters" to clarify it applies to Case fields only.
+- **Integration tests added** — 8 batch-level tests that verify the full pipeline (batch start → field extraction → query → engine evaluation → case update) for both Additional Filter Logic and Record Type filtering. These close the structural testing gap described in the changes summary.

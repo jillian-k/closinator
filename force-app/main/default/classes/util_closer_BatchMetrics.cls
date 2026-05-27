@@ -157,4 +157,3 @@ public with sharing class util_closer_BatchMetrics {
         return minutes + 'm ' + seconds + 's';
     }
 }
-

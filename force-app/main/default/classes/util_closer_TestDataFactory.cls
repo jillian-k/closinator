@@ -381,4 +381,3 @@ public class util_closer_TestDataFactory {
         return settings;
     }
 }
-

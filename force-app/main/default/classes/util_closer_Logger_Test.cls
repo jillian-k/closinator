@@ -84,4 +84,3 @@ private class util_closer_Logger_Test {
         System.assert(true, 'Debug log with null context handled');
     }
 }
-

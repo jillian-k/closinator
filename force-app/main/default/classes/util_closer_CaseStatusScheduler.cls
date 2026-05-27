@@ -104,4 +104,3 @@ public with sharing class util_closer_CaseStatusScheduler implements Schedulable
         return jobs.isEmpty() ? null : jobs[0];
     }
 }
-
