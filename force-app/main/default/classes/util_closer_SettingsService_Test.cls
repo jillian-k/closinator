@@ -603,4 +603,3 @@ private class util_closer_SettingsService_Test {
         System.assertEquals(false, isEnabled, 'Null log rule evaluations should return false');
     }
 }
-

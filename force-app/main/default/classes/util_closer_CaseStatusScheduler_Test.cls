@@ -197,4 +197,3 @@ private class util_closer_CaseStatusScheduler_Test {
         util_closer_CaseStatusScheduler.unscheduleJob();
     }
 }
-
